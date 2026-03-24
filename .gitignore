@@ -2,3 +2,4 @@ node_modules/
 .env
 leads.db
 package-lock.json
+backup_leads.csv

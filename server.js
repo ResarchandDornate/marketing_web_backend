@@ -4,6 +4,7 @@ const cors = require('cors');
 const nodemailer = require('nodemailer');
 const sqlite3 = require('sqlite3').verbose();
 const os = require('os');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -42,7 +43,18 @@ app.post('/api/send-query', async (req, res) => {
     `INSERT INTO leads (firstName, phone, email, company, message) VALUES (?, ?, ?, ?, ?)`,
     [firstName, phone, email, company, message],
     function (err) {
-      if (err) console.error('Error saving lead to database:', err.message);
+      if (err) {
+        console.error('Error saving lead to database:', err.message);
+        
+        // Backup to CSV if DB fails
+        const backupFile = 'backup_leads.csv';
+        const csvRecord = `"${(firstName || '').replace(/"/g, '""')}","${(phone || '').replace(/"/g, '""')}","${(email || '').replace(/"/g, '""')}","${(company || '').replace(/"/g, '""')}","${(message || '').replace(/"/g, '""')}","${new Date().toISOString()}"\n`;
+        
+        fs.appendFile(backupFile, csvRecord, (fsErr) => {
+          if (fsErr) console.error('Error writing to backup_leads.csv:', fsErr);
+          else console.log('Lead backed up to backup_leads.csv due to DB error.');
+        });
+      }
     }
   );
 
